@@ -1,4 +1,4 @@
-import { Notice, Plugin, WorkspaceLeaf } from "obsidian";
+import { Editor, Menu, Notice, Plugin, WorkspaceLeaf } from "obsidian";
 import { registerCommands } from "./commands";
 import { CHATGPT_URL, CLAUDE_URL, DEEPSEEK_URL, PERPLEXITY_URL, GEMINI_URL, GROK_URL } from "./constants";
 import { ContextItem, DEFAULT_SETTINGS, DockSettings, AIChatSettingTab } from "./settings";
@@ -21,6 +21,19 @@ export default class AIChatPlugin extends Plugin {
 
 		registerCommands(this);
 		this.addSettingTab(new AIChatSettingTab(this.app, this));
+
+		this.registerEvent(
+			this.app.workspace.on("editor-menu", (menu: Menu, editor: Editor) => {
+				const selection = editor.getSelection();
+				if (!selection.trim()) return;
+				menu.addItem((item) => {
+					item
+						.setTitle("Send selected text to AI")
+						.setIcon("messages-square")
+						.onClick(() => { void this.sendSelectionToAI(selection); });
+				});
+			}),
+		);
 
 		if (this.settings.openOnStartup) {
 			this.app.workspace.onLayoutReady(() => {
@@ -85,6 +98,7 @@ export default class AIChatPlugin extends Plugin {
 	}
 
 	async sendSelectionToAI(text: string): Promise<void> {
+		if (!this.settings.sendSelectionEnabled) { new Notice("Send selected text is disabled — enable it in AI Browser Chat settings."); return; }
 		if (!text.trim()) { new Notice("Select some text first."); return; }
 		await this.activateView();
 		const leaf = this.app.workspace.getLeavesOfType(AI_CHAT_VIEW_TYPE)[0];

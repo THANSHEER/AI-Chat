@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to ChatPortal. This document covers the workflow, code expectations, and review process.
+Thank you for your interest in contributing to AI Browser Chat. This document covers the workflow, code expectations, and review process.
 
 ---
 
@@ -18,8 +18,8 @@ Thank you for your interest in contributing to ChatPortal. This document covers 
 
 ```bash
 # Fork on GitHub, then:
-git clone https://github.com/<your-username>/ChatPortal.git
-cd ChatPortal
+git clone https://github.com/<your-username>/AI-Browser-Chat.git
+cd AI-Browser-Chat
 git checkout -b feat/your-feature-name
 # or
 git checkout -b fix/short-description
@@ -42,12 +42,12 @@ See [`docs/development.md`](development.md) for vault linking instructions.
 
 ### 3. Make changes
 
-- Follow the existing code style (2-space indentation, TypeScript strict mode, no `as any`).
+- Follow the existing code style (tabs, TypeScript strict mode, no `as any`).
 - Do not add features beyond what the issue or PR description asks for.
 - Do not add comments that describe *what* the code does — only add comments for non-obvious *why* (hidden constraints, workarounds, subtle invariants).
 - No `console.log` statements in committed code.
-- If you add a new setting, follow the pattern in [`Adding a new setting`](architecture.md#adding-a-new-setting).
-- If you add a new AI service, follow the pattern in [`Adding a new AI service`](architecture.md#adding-a-new-ai-service).
+- If you add a new setting, follow the pattern in [Adding a new setting](architecture.md#adding-a-new-setting).
+- If you add a new AI service, follow the pattern in [Adding a new AI service](architecture.md#adding-a-new-ai-service).
 
 ### 4. Lint, build, and test
 
@@ -64,12 +64,14 @@ All three checks run in CI; failing any will block the PR.
 Test the following before submitting:
 
 - [ ] Panel opens from the ribbon icon and from the command palette.
+- [ ] Toggle sidebar command opens and closes the panel.
 - [ ] Service dropdown switches between all six services correctly.
 - [ ] Sessions persist after closing and reopening the panel.
 - [ ] Active file, open files, note picker, and folder picker all add items correctly.
 - [ ] Duplicate items are not added.
 - [ ] Add injects context into the AI input (or falls back to clipboard with a notice).
 - [ ] Send selected text injects the selection into the active chat input.
+- [ ] Send selection disabled notice appears when the setting is off.
 - [ ] Context truncation notice fires when the limit is exceeded.
 - [ ] Clear all removes all items and closes the list.
 - [ ] Settings changes (enable/disable service, max length, prefix) are reflected immediately.
@@ -88,7 +90,7 @@ Test the following before submitting:
 
 | Rule | Detail |
 |---|---|
-| Indentation | 2 spaces (enforced by `.editorconfig`) |
+| Indentation | Tabs (enforced by `.editorconfig`) |
 | Quotes | Double quotes for strings |
 | Semicolons | Required |
 | Trailing commas | Required in multi-line structures |
@@ -108,9 +110,10 @@ Test the following before submitting:
 - Any backend server or external network dependency beyond the AI service URLs.
 - `innerHTML` assignments — use DOM APIs or React.
 - Abstractions not required by the task (premature generalization, unused helpers, etc.).
+- Mobile compatibility shims — this plugin is intentionally desktop-only.
 
 ---
 
 ## Questions
 
-Open a [GitHub Discussion](https://github.com/THANSHEER/ChatPortal/discussions) for design questions or ideas before investing time in a large PR. For bugs, open an issue with reproduction steps.
+Open a GitHub Discussion for design questions or ideas before investing time in a large PR. For bugs, open an issue with reproduction steps.

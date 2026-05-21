@@ -1,12 +1,12 @@
 # Architecture
 
-This document describes how ChatPortal is structured, how data flows through it, and the key design decisions behind it.
+This document describes how AI Browser Chat is structured, how data flows through it, and the key design decisions behind it.
 
 ---
 
 ## What the plugin does
 
-ChatPortal embeds AI chat services (ChatGPT, Claude, DeepSeek, Perplexity, Gemini, Grok) in an Obsidian sidebar using an Electron `<webview>`. It also provides a vault context feature: the user selects notes or folders, clicks **Add**, and the note content is injected into the AI chat input (or copied to the clipboard if injection is unavailable).
+AI Browser Chat embeds AI chat services (ChatGPT, Claude, DeepSeek, Perplexity, Gemini, Grok) in an Obsidian sidebar using an Electron `<webview>`. It also provides a vault context feature: the user selects notes or folders, clicks **Add**, and the note content is injected into the AI chat input (or copied to the clipboard if injection is unavailable).
 
 ---
 
@@ -26,29 +26,29 @@ ChatPortal embeds AI chat services (ChatGPT, Claude, DeepSeek, Perplexity, Gemin
 
 ```
 src/
-  main.ts            Plugin entry point. Owns lifecycle, settings load/save,
-                     view registration, ribbon, and command registration.
+  main.ts              Plugin entry point. Owns lifecycle, settings load/save,
+                       view registration, ribbon, and command registration.
 
-  settings.ts        DockSettings interface, DEFAULT_SETTINGS, and
-                     ChatPortalSettingTab. All persisted state lives here.
-                     contextItems carries the persistent context memory.
+  settings.ts          DockSettings interface, DEFAULT_SETTINGS, and
+                       AIChatSettingTab. All persisted state lives here.
+                       contextItems carries the persistent context memory.
 
-  constants.ts       URL constants for all six AI services.
+  constants.ts         URL constants for all six AI services.
 
   commands/
-    index.ts         registerCommands() — thin wrappers that call methods on
-                     ChatPortalPlugin. Logic stays in main.ts.
+    index.ts           registerCommands() — thin wrappers that call methods on
+                       AIChatPlugin. Logic stays in main.ts.
 
   views/
-    ChatPortalView.tsx   Obsidian ItemView that mounts the React root.
-                         ChatPortalView.renderView() is the single call site
-                         that renders <ChatPortalPanel>. New plugin-level state
-                         is threaded down as props here.
+    AIChatView.tsx     Obsidian ItemView that mounts the React root.
+                       AIChatView.renderView() is the single call site
+                       that renders <AIChatPanel>. New plugin-level state
+                       is threaded down as props here.
 
   components/
-    ChatPortalPanel.tsx  Root React component. Owns the <webview> lifecycle
-                         (create, src updates, event listeners, teardown)
-                         and the context injection logic.
+    AIChatPanel.tsx    Root React component. Owns the <webview> lifecycle
+                       (create, src updates, event listeners, teardown)
+                       and the context injection logic.
 
   modals/
     FilePickerModal.ts    FuzzySuggestModal<TFile> — picks a single note.
@@ -75,7 +75,7 @@ User action (button click)
 
 User clicks Add
   │
-  ├─ handleSendContext() reads vault files via app.vault.read()
+  ├─ handleAddContext() reads vault files via app.vault.read()
   ├─ Formats context string
   ├─ navigator.clipboard.writeText(context)   ← always runs (reliable fallback)
   └─ webview.executeJavaScript(injectScript)  ← best-effort; may fail silently
@@ -118,18 +118,18 @@ Obsidian modals extend `FuzzySuggestModal` or `Modal`. They must be instantiated
 The service selector is a native `<select>` — adding a new service is one `<option>` line plus a few supporting entries.
 
 1. Add a URL constant in `constants.ts`.
-2. Add an entry to `SERVICE_URLS` in `ChatPortalPanel.tsx`.
+2. Add an entry to `SERVICE_URLS` in `AIChatPanel.tsx`.
 3. Add a URL-pattern match in `getServiceKey()` in `utils.ts`.
-4. Add `<option value="newkey">Service Name</option>` inside the `<select>` in `ChatPortalPanel.tsx`.
-5. Add a `pd-svc-dot--newkey` colour rule in `styles.css`.
-6. Add `enableNewService` to `DockSettings` + `DEFAULT_SETTINGS` in `settings.ts`, wire the settings tab toggle, and pass the new prop from `ChatPortalView.renderView()`.
+4. Add `<option value="newkey">Service Name</option>` inside the `<select>` in `AIChatPanel.tsx`.
+5. Add a `vc-svc-dot--newkey` colour rule in `styles.css`.
+6. Add `enableNewService` to `DockSettings` + `DEFAULT_SETTINGS` in `settings.ts`, wire the settings tab toggle, and pass the new prop from `AIChatView.renderView()`.
 7. Add `openNewService()` in `main.ts` and a command entry in `commands/index.ts`.
 
 ## Adding a new setting
 
 1. Add the field to `DockSettings` in `settings.ts` with a default in `DEFAULT_SETTINGS`.
-2. Add a `new Setting(containerEl)…` block in `ChatPortalSettingTab.display()`.
-3. Pass it down as a prop from `ChatPortalView.renderView()` if the component needs it.
+2. Add a `new Setting(containerEl)…` block in `AIChatSettingTab.display()`.
+3. Pass it down as a prop from `AIChatView.renderView()` if the component needs it.
 
 ---
 

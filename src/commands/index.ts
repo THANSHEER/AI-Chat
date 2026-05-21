@@ -49,4 +49,10 @@ export function registerCommands(plugin: AIChatPlugin): void {
 		name: "Send selected text to AI",
 		editorCallback: (editor: Editor) => void plugin.sendSelectionToAI(editor.getSelection()),
 	});
+
+	plugin.addCommand({
+		id: "toggle",
+		name: "Toggle sidebar",
+		callback: () => void plugin.toggleView(),
+	});
 }
