@@ -26,6 +26,7 @@ export interface DockSettings {
 	autoClearContext: boolean;
 	contextPrefix: string;
 	theme: ThemeMode;
+	sendSelectionEnabled: boolean;
 }
 
 export const DEFAULT_SETTINGS: DockSettings = {
@@ -44,6 +45,7 @@ export const DEFAULT_SETTINGS: DockSettings = {
 	autoClearContext: false,
 	contextPrefix: "",
 	theme: "auto",
+	sendSelectionEnabled: true,
 };
 
 export class AIChatSettingTab extends PluginSettingTab {
@@ -241,6 +243,19 @@ export class AIChatSettingTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						}
 					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Send selected text to AI")
+			.setDesc(
+				"Enable the 'Send selected text to AI' command. " +
+				"When on, selecting text and running the command injects it directly into the active AI service.",
+			)
+			.addToggle((t) =>
+				t.setValue(this.plugin.settings.sendSelectionEnabled).onChange(async (v) => {
+					this.plugin.settings.sendSelectionEnabled = v;
+					await this.plugin.saveSettings();
+				}),
 			);
 	}
 }

@@ -8,10 +8,10 @@ Everything you need to get the plugin running locally, understand the build syst
 
 | Tool | Minimum version | Purpose |
 |---|---|---|
-| Node.js | 18 | Runtime for build tools |
+| Node.js | 22 | Runtime for build tools |
 | npm | 9 | Package manager |
 | Git | any | Version control |
-| Obsidian (desktop) | 0.15.0 | Plugin host |
+| Obsidian (desktop) | 1.7.2 | Plugin host |
 
 ---
 
@@ -19,8 +19,8 @@ Everything you need to get the plugin running locally, understand the build syst
 
 ```bash
 # 1. Clone
-git clone https://github.com/THANSHEER/ChatPortal
-cd ChatPortal
+git clone https://github.com/THANSHEER/AI-Browser-Chat
+cd AI-Browser-Chat
 
 # 2. Install dependencies
 npm install
@@ -37,6 +37,7 @@ No environment variables or external services are required. The plugin runs enti
 | `npm run dev` | esbuild in watch mode — rebuilds `main.js` on every file save |
 | `npm run build` | Type-check (`tsc --noEmit`) then production build (minified, no sourcemaps) |
 | `npm run lint` | ESLint across all TypeScript source files |
+| `npm run test` | Run unit tests with Vitest |
 | `npm run version` | Bumps version in `manifest.json` and `versions.json`, then stages both |
 
 All build output lands in the **repo root** as `main.js` (not in a `dist/` folder), alongside `manifest.json` and `styles.css`. This is how Obsidian expects plugin files to be laid out.
@@ -49,20 +50,20 @@ Symlinking the repo directory into an Obsidian vault's plugin folder gives you z
 
 ```bash
 # macOS / Linux
-ln -s "$(pwd)" "/Users/<you>/path-to-vault/.obsidian/plugins/ChatPortal"
+ln -s "$(pwd)" "/Users/<you>/path-to-vault/.obsidian/plugins/aibrowser-chat"
 
 # Windows — run as Administrator in Command Prompt
-mklink /D "%APPDATA%\obsidian\plugins\ChatPortal" "%cd%"
+mklink /D "%APPDATA%\obsidian\plugins\aibrowser-chat" "%cd%"
 ```
 
 Then:
 1. Open Obsidian → **Settings → Community plugins → Installed plugins**.
-2. Find **ChatPortal** and enable it.
+2. Find **AI Browser Chat** and enable it.
 3. After any code change, either:
    - Open Obsidian's developer console (`Ctrl+Shift+I`) and press **Ctrl+R** to reload, or
    - Toggle the plugin off and back on in settings.
 
-> **Tip**: Enable "Safe mode" off and keep the developer tools open (View → Toggle Developer Tools) for quick access to console logs and element inspection inside the webview.
+> **Tip**: Keep developer tools open (View → Toggle Developer Tools) for quick access to console logs and element inspection inside the webview.
 
 ---
 
@@ -73,14 +74,15 @@ src/
   main.ts                    Plugin lifecycle, settings, view/command registration
   settings.ts                Persistent settings interface and settings tab UI
   constants.ts               Service URL constants
+  utils.ts                   Shared helpers (normalizeUrl, getServiceKey, etc.)
   commands/index.ts          Command palette entry points
   components/
-    ChatPortalPanel.tsx       Root React component — webview + context toolbar
+    AIChatPanel.tsx           Root React component — webview + context toolbar
   modals/
     FilePickerModal.ts        Fuzzy note picker modal
     FolderPickerModal.ts      Fuzzy folder picker modal
   views/
-    ChatPortalView.tsx        Obsidian ItemView wrapper that mounts the React tree
+    AIChatView.tsx            Obsidian ItemView wrapper that mounts the React tree
 styles.css                   All CSS using Obsidian CSS custom properties
 manifest.json                Plugin metadata (id, version, minAppVersion, isDesktopOnly)
 esbuild.config.mjs           Bundle config: external deps, JSX transform, CJS output
@@ -108,7 +110,7 @@ Strict mode is fully enabled:
 - `strictNullChecks` — null/undefined must be handled explicitly
 - `useUnknownInCatchVariables` — caught errors are typed `unknown`, not `Error`
 
-Avoid `as any` casts. If you need to access a property that TypeScript doesn't know about, use a typed local interface or a type guard.
+Avoid `as any` casts. If you need to access a property TypeScript doesn't know about, use a typed local interface or a type guard.
 
 ---
 
@@ -127,7 +129,7 @@ Run `npm run lint` before opening a PR. The CI pipeline will also run it.
 
 ### Browser devtools inside the webview
 
-Right-click inside the embedded webview → **Inspect Element** (if `allowpopups` permits). Alternatively, open Obsidian's main developer console and run:
+Right-click inside the embedded webview → **Inspect Element**. Alternatively, open Obsidian's main developer console and run:
 
 ```js
 require('electron').remote.webContents.getAllWebContents()
@@ -135,13 +137,9 @@ require('electron').remote.webContents.getAllWebContents()
 
 to find the webview's `webContents` and open a dedicated devtools window for it.
 
-### Logging
-
-Use `console.log` freely during development — all output appears in Obsidian's developer console. Remove or gate logs behind a debug flag before committing.
-
 ### Context injection failures
 
-`executeJavaScript` errors are silently caught in `handleSendContext`. To debug injection, temporarily remove the `catch {}` block and watch the console. The most common causes are:
+`executeJavaScript` errors are silently caught in `handleAddContext`. To debug injection, temporarily remove the `catch {}` block and watch the console. The most common causes are:
 - The webview hasn't finished loading (`dom-ready` not yet fired)
 - The target site changed its input selector
 - The Electron partition is blocked by content security policy
@@ -151,7 +149,7 @@ Use `console.log` freely during development — all output appears in Obsidian's
 ## Releasing a new version
 
 1. Update `package.json` version.
-2. Run `npm run version` — this updates `manifest.json` and `versions.json` and stages them.
+2. Run `npm run version` — updates `manifest.json` and `versions.json` and stages them.
 3. Run `npm run build` to generate the final `main.js`.
 4. Commit and tag: `git tag <version> && git push --tags`.
 5. Create a GitHub release and attach `main.js`, `manifest.json`, and `styles.css` as release assets.

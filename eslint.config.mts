@@ -2,6 +2,8 @@ import tseslint from 'typescript-eslint';
 import obsidianmd from "eslint-plugin-obsidianmd";
 import globals from "globals";
 import { globalIgnores } from "eslint/config";
+import { fileURLToPath } from "url";
+import path from "path";
 
 // All DEFAULT_BRANDS from eslint-plugin-obsidianmd, extended with this plugin's AI services.
 // Keep in sync when updating eslint-plugin-obsidianmd.
@@ -25,7 +27,7 @@ const SENTENCE_CASE_BRANDS = [
 	"VS Code", "Visual Studio Code", "IntelliJ IDEA", "WebStorm", "PyCharm",
 	// AI services used by this plugin
 	"ChatGPT", "Claude", "DeepSeek", "Perplexity", "Gemini", "Grok",
-	"Google", "xAI", "ChatPortal",
+	"Google", "xAI", "AI Browser Chat",
 ];
 
 export default tseslint.config(
@@ -41,7 +43,7 @@ export default tseslint.config(
 						'manifest.json'
 					]
 				},
-				tsconfigRootDir: import.meta.dirname,
+				tsconfigRootDir: path.dirname(fileURLToPath(import.meta.url)),
 				extraFileExtensions: ['.json']
 			},
 		},
