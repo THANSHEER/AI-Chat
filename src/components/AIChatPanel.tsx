@@ -185,9 +185,13 @@ export function AIChatPanel({
 	useEffect(() => {
 		if (!pendingText) return;
 		void (async () => {
-			await navigator.clipboard.writeText(pendingText);
 			const injected = await injectIntoWebview(pendingText);
-			new Notice(injected ? "Selection sent to AI." : "Selection copied — paste with Cmd+V / Ctrl+V.");
+			if (injected) {
+				new Notice("Selection sent to AI.");
+			} else {
+				await navigator.clipboard.writeText(pendingText);
+				new Notice("Selection copied — paste with Cmd+V / Ctrl+V.");
+			}
 			onPendingTextHandled?.();
 		})();
 	}, [pendingText]);
@@ -373,13 +377,11 @@ export function AIChatPanel({
 			const { text: fullText, truncated } = buildContextString(parts, maxContextLength, contextPrefix);
 			if (truncated) new Notice("Context truncated — limit reached.");
 
-			// Always copy to clipboard first — it is the guaranteed fallback.
-			await navigator.clipboard.writeText(fullText);
-
 			const injected = await injectIntoWebview(fullText);
 			if (injected) {
 				new Notice("Context pasted in chat.");
 			} else {
+				await navigator.clipboard.writeText(fullText);
 				new Notice("Context copied to clipboard — paste with Cmd+V / Ctrl+V.");
 			}
 
