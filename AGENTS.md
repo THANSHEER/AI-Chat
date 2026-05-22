@@ -1,4 +1,4 @@
-# CLAUDE.md — AI Chat Architecture Guide
+# AGENTS.md — AI Chat Architecture Guide
 
 This file is the AI contributor guide. Read it before suggesting changes. It describes the design intent and boundaries so new code fits the existing architecture.
 
