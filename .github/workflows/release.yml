@@ -3,7 +3,7 @@ name: Release
 on:
     push:
         tags:
-            - '[0-9]+.[0-9]+.[0-9]+'
+            - "[0-9]*.[0-9]*.[0-9]*"
 
 permissions:
     contents: write
@@ -12,13 +12,17 @@ permissions:
 
 jobs:
     release:
+        name: Build & publish release
         runs-on: ubuntu-latest
 
         steps:
             - uses: actions/checkout@v4
+              with:
+                  # Full history is required so generate_release_notes
+                  # can compare against the previous tag correctly.
+                  fetch-depth: 0
 
-            - name: Use Node.js 22.x
-              uses: actions/setup-node@v4
+            - uses: actions/setup-node@v4
               with:
                   node-version: 22.x
                   cache: npm
@@ -28,6 +32,12 @@ jobs:
 
             - name: Build
               run: npm run build
+
+            - name: Verify release artifacts
+              run: |
+                  test -f main.js       || (echo "main.js missing"       && exit 1)
+                  test -f manifest.json || (echo "manifest.json missing" && exit 1)
+                  test -f styles.css    || (echo "styles.css missing"    && exit 1)
 
             - name: Attest main.js
               uses: actions/attest-build-provenance@v2
@@ -47,8 +57,10 @@ jobs:
             - name: Create GitHub release
               uses: softprops/action-gh-release@v2
               with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
                   files: |
                       main.js
                       manifest.json
                       styles.css
                   generate_release_notes: true
+                  make_latest: true
