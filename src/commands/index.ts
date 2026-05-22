@@ -55,4 +55,10 @@ export function registerCommands(plugin: AIChatPlugin): void {
 		name: "Toggle sidebar",
 		callback: () => void plugin.toggleView(),
 	});
+
+	plugin.addCommand({
+		id: "cycle-service",
+		name: "Cycle to next AI service",
+		callback: () => void plugin.cycleService(),
+	});
 }

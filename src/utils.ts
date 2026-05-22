@@ -1,5 +1,9 @@
 import { SERVICE_URLS, ServiceKey } from "./constants";
 
+export function stripFrontmatterContent(content: string): string {
+	return content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "").trimStart();
+}
+
 export function normalizeUrl(value: string): string {
 	const trimmed = value.trim();
 	if (!trimmed) return SERVICE_URLS.chatgpt;

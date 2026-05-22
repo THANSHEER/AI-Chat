@@ -1,7 +1,8 @@
 import { Editor, Menu, Notice, Plugin, WorkspaceLeaf } from "obsidian";
 import { registerCommands } from "./commands";
-import { CHATGPT_URL, CLAUDE_URL, DEEPSEEK_URL, PERPLEXITY_URL, GEMINI_URL, GROK_URL } from "./constants";
+import { CHATGPT_URL, CLAUDE_URL, DEEPSEEK_URL, PERPLEXITY_URL, GEMINI_URL, GROK_URL, SERVICE_URLS, ServiceKey } from "./constants";
 import { ContextItem, DEFAULT_SETTINGS, DockSettings, AIChatSettingTab } from "./settings";
+import { getServiceKey } from "./utils";
 import { AI_CHAT_VIEW_TYPE, AIChatView } from "./views/AIChatView";
 
 export default class AIChatPlugin extends Plugin {
@@ -112,6 +113,27 @@ export default class AIChatPlugin extends Plugin {
 		this.settings.webAppUrl = url;
 		await this.saveSettings();
 		this.rerenderOpenViews();
+	}
+
+	async cycleService(): Promise<void> {
+		const enableMap: Record<ServiceKey, keyof DockSettings> = {
+			chatgpt:    "enableChatGPT",
+			claude:     "enableClaude",
+			deepseek:   "enableDeepSeek",
+			perplexity: "enablePerplexity",
+			gemini:     "enableGemini",
+			grok:       "enableGrok",
+		};
+		const keys = Object.keys(SERVICE_URLS) as ServiceKey[];
+		const enabled = keys.filter((k) => this.settings[enableMap[k]] as boolean);
+		if (enabled.length === 0) return;
+		const current = getServiceKey(this.settings.webAppUrl);
+		const idx = current ? enabled.indexOf(current) : -1;
+		const nextKey = enabled[(idx + 1) % enabled.length];
+		if (!nextKey) return;
+		await this.setWebAppUrl(SERVICE_URLS[nextKey]);
+		await this.activateView();
+		new Notice(`Switched to ${nextKey.charAt(0).toUpperCase() + nextKey.slice(1)}`);
 	}
 
 	async setContextItems(items: ContextItem[]): Promise<void> {

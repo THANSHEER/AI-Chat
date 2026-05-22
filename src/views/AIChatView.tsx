@@ -71,6 +71,10 @@ export class AIChatView extends ItemView {
 				pendingText={this.pendingText}
 				onPendingTextHandled={() => { this.pendingText = null; this.renderView(); }}
 				theme={this.plugin.settings.theme}
+				promptTemplates={this.plugin.settings.promptTemplates}
+				autoContextOnOpen={this.plugin.settings.autoContextOnOpen}
+				stripFrontmatter={this.plugin.settings.stripFrontmatter}
+				saveNoteFolder={this.plugin.settings.saveNoteFolder}
 			/>,
 		);
 	}

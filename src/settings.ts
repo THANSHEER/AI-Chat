@@ -8,6 +8,12 @@ export interface ContextItem {
 	displayName: string;
 }
 
+export interface PromptTemplate {
+	id: string;
+	label: string;
+	text: string;
+}
+
 export type ThemeMode = "auto" | "light" | "dark";
 
 export interface DockSettings {
@@ -27,6 +33,10 @@ export interface DockSettings {
 	contextPrefix: string;
 	theme: ThemeMode;
 	sendSelectionEnabled: boolean;
+	promptTemplates: PromptTemplate[];
+	autoContextOnOpen: boolean;
+	stripFrontmatter: boolean;
+	saveNoteFolder: string;
 }
 
 export const DEFAULT_SETTINGS: DockSettings = {
@@ -46,6 +56,14 @@ export const DEFAULT_SETTINGS: DockSettings = {
 	contextPrefix: "",
 	theme: "auto",
 	sendSelectionEnabled: true,
+	promptTemplates: [
+		{ id: "t1", label: "Summarize", text: "Please summarize the following note concisely:\n\n" },
+		{ id: "t2", label: "Fix grammar", text: "Please fix the grammar and spelling in the following text:\n\n" },
+		{ id: "t3", label: "Expand idea", text: "Please expand on the following idea with more depth and detail:\n\n" },
+	],
+	autoContextOnOpen: false,
+	stripFrontmatter: false,
+	saveNoteFolder: "AI Notes",
 };
 
 export class AIChatSettingTab extends PluginSettingTab {
@@ -257,5 +275,88 @@ export class AIChatSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}),
 			);
+
+		new Setting(containerEl)
+			.setName("Auto-add active note on open")
+			.setDesc("Automatically add the currently focused note to context when the sidebar opens.")
+			.addToggle((t) =>
+				t.setValue(this.plugin.settings.autoContextOnOpen).onChange(async (v) => {
+					this.plugin.settings.autoContextOnOpen = v;
+					await this.plugin.saveSettings();
+				}),
+			);
+
+		new Setting(containerEl)
+			.setName("Strip frontmatter when sending context")
+			.setDesc("Remove YAML frontmatter (the --- block) from notes before injecting them into the AI.")
+			.addToggle((t) =>
+				t.setValue(this.plugin.settings.stripFrontmatter).onChange(async (v) => {
+					this.plugin.settings.stripFrontmatter = v;
+					await this.plugin.saveSettings();
+				}),
+			);
+
+		new Setting(containerEl).setName("Save AI response").setHeading();
+
+		new Setting(containerEl)
+			.setName("Save folder")
+			.setDesc("Vault folder where notes created via the 'Save response' button are stored.")
+			.addText((t) =>
+				t
+					.setPlaceholder("AI Notes")
+					.setValue(this.plugin.settings.saveNoteFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.saveNoteFolder = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl).setName("Prompt templates").setHeading();
+
+		new Setting(containerEl)
+			.setName("Add template")
+			.setDesc("Templates appear in the sidebar and inject a prompt into the active AI service with one click.")
+			.addButton((btn) => {
+				btn.setButtonText("+ Add").setCta().onClick(async () => {
+					this.plugin.settings.promptTemplates.push({
+						id: Date.now().toString(),
+						label: "New template",
+						text: "",
+					});
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			});
+
+		for (const template of this.plugin.settings.promptTemplates) {
+			const row = new Setting(containerEl)
+				.addText((t) =>
+					t
+						.setPlaceholder("Label")
+						.setValue(template.label)
+						.onChange(async (v) => {
+							template.label = v;
+							await this.plugin.saveSettings();
+						}),
+				)
+				.addTextArea((t) => {
+					t.setPlaceholder("Prompt text…").setValue(template.text).onChange(async (v) => {
+						template.text = v;
+						await this.plugin.saveSettings();
+					});
+					t.inputEl.rows = 2;
+					t.inputEl.style.width = "100%";
+					return t;
+				})
+				.addButton((btn) => {
+					btn.setIcon("trash").setWarning().setTooltip("Delete template").onClick(async () => {
+						this.plugin.settings.promptTemplates =
+							this.plugin.settings.promptTemplates.filter((t) => t.id !== template.id);
+						await this.plugin.saveSettings();
+						this.display();
+					});
+				});
+			row.settingEl.addClass("vc-template-row");
+		}
 	}
 }

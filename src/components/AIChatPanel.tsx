@@ -3,8 +3,8 @@ import { App, Notice, TFile, TFolder } from "obsidian";
 import { SERVICE_URLS, ServiceKey } from "../constants";
 import { FilePickerModal } from "../modals/FilePickerModal";
 import { FolderPickerModal } from "../modals/FolderPickerModal";
-import { ContextItem, ThemeMode } from "../settings";
-import { normalizeUrl, getServiceKey, firstEnabled, buildContextString } from "../utils";
+import { ContextItem, ThemeMode, PromptTemplate } from "../settings";
+import { normalizeUrl, getServiceKey, firstEnabled, buildContextString, stripFrontmatterContent } from "../utils";
 
 export interface AIChatPanelProps {
 	app: App;
@@ -25,11 +25,19 @@ export interface AIChatPanelProps {
 	pendingText?: string | null;
 	onPendingTextHandled?: () => void;
 	theme?: ThemeMode;
+	promptTemplates: PromptTemplate[];
+	autoContextOnOpen: boolean;
+	stripFrontmatter: boolean;
+	saveNoteFolder: string;
 }
 
 type EmbeddedWebviewElement = HTMLElement & {
 	src: string;
 	executeJavaScript?: (code: string) => Promise<unknown>;
+	goBack?: () => void;
+	goForward?: () => void;
+	canGoBack?: () => boolean;
+	canGoForward?: () => boolean;
 };
 
 
@@ -52,6 +60,10 @@ export function AIChatPanel({
 	pendingText = null,
 	onPendingTextHandled,
 	theme = "auto",
+	promptTemplates,
+	autoContextOnOpen,
+	stripFrontmatter,
+	saveNoteFolder,
 }: AIChatPanelProps): React.JSX.Element {
 	const hostRef             = useRef<HTMLDivElement | null>(null);
 	const webviewRef          = useRef<EmbeddedWebviewElement | null>(null);
@@ -63,6 +75,10 @@ export function AIChatPanel({
 	const [items, setItems]                       = useState<ContextItem[]>(initialContextItems);
 	const [isAdding, setIsAdding]                 = useState(false);
 	const [showContextList, setShowContextList]   = useState(false);
+	const [canGoBack, setCanGoBack]               = useState(false);
+	const [canGoForward, setCanGoForward]         = useState(false);
+	const [isExpanded, setIsExpanded]             = useState(false);
+	const [showTemplates, setShowTemplates]       = useState(false);
 
 	const enabledFlags: Record<ServiceKey, boolean> = {
 		chatgpt:    enableChatGPT,
@@ -105,6 +121,17 @@ export function AIChatPanel({
 		setActiveUrl(normalizeUrl(webAppUrl));
 	}, [webAppUrl]);
 
+	// Auto-add active note to context when panel first opens.
+	useEffect(() => {
+		if (!autoContextOnOpen) return;
+		const activeFile = app.workspace.getActiveFile();
+		if (!activeFile) return;
+		setItems((prev) => {
+			if (prev.some((i) => i.path === activeFile.path)) return prev;
+			return [...prev, { path: activeFile.path, type: "file", displayName: activeFile.basename }];
+		});
+	}, []);
+
 	// Create the webview element imperatively — React cannot render <webview> reliably.
 	useEffect(() => {
 		const host = hostRef.current;
@@ -122,18 +149,23 @@ export function AIChatPanel({
 		webview.setAttribute("useragent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
 		webview.src = activeUrl;
 
-		const onReady      = (): void => { readyRef.current = true; setWebviewSupported(true); setIsLoading(false); };
+		const refreshNavState = (): void => {
+			setCanGoBack(webview.canGoBack?.() ?? false);
+			setCanGoForward(webview.canGoForward?.() ?? false);
+			lastInteractedAtRef.current = Date.now();
+		};
+
+		const onReady      = (): void => { readyRef.current = true; setWebviewSupported(true); setIsLoading(false); refreshNavState(); };
 		const onLoadStart  = (): void => { setIsLoading(true); };
-		const onLoadStop   = (): void => { setIsLoading(false); };
+		const onLoadStop   = (): void => { setIsLoading(false); refreshNavState(); };
 		const onLoadFailed = (): void => { setWebviewSupported(false); setIsLoading(false); };
-		const onNavigate   = (): void => { lastInteractedAtRef.current = Date.now(); };
 
 		webview.addEventListener("dom-ready",            onReady     );
 		webview.addEventListener("did-start-loading",    onLoadStart );
 		webview.addEventListener("did-stop-loading",     onLoadStop  );
 		webview.addEventListener("did-fail-load",        onLoadFailed);
-		webview.addEventListener("did-navigate",         onNavigate  );
-		webview.addEventListener("did-navigate-in-page", onNavigate  );
+		webview.addEventListener("did-navigate",         refreshNavState);
+		webview.addEventListener("did-navigate-in-page", refreshNavState);
 
 		host.appendChild(webview);
 		webviewRef.current = webview;
@@ -143,8 +175,8 @@ export function AIChatPanel({
 			webview.removeEventListener("did-start-loading",    onLoadStart );
 			webview.removeEventListener("did-stop-loading",     onLoadStop  );
 			webview.removeEventListener("did-fail-load",        onLoadFailed);
-			webview.removeEventListener("did-navigate",         onNavigate  );
-			webview.removeEventListener("did-navigate-in-page", onNavigate  );
+			webview.removeEventListener("did-navigate",         refreshNavState);
+			webview.removeEventListener("did-navigate-in-page", refreshNavState);
 			webview.remove();
 			webviewRef.current = null;
 			readyRef.current   = false;
@@ -273,6 +305,14 @@ export function AIChatPanel({
 		lastInteractedAtRef.current = Date.now();
 	}
 
+	function goBack(): void {
+		webviewRef.current?.goBack?.();
+	}
+
+	function goForward(): void {
+		webviewRef.current?.goForward?.();
+	}
+
 	function addActiveFile(): void {
 		const activeFile = app.workspace.getActiveFile();
 		if (!activeFile) { new Notice("No active file."); return; }
@@ -343,6 +383,33 @@ export function AIChatPanel({
 		setShowContextList(false);
 	}
 
+	async function applyTemplate(text: string): Promise<void> {
+		setShowTemplates(false);
+		if (!text.trim()) { new Notice("This template is empty — edit it in Settings."); return; }
+		const injected = await injectIntoWebview(text);
+		if (!injected) {
+			await navigator.clipboard.writeText(text);
+			new Notice("Template copied — paste with Cmd+V / Ctrl+V.");
+		}
+	}
+
+	async function saveClipboardAsNote(): Promise<void> {
+		const text = await navigator.clipboard.readText();
+		if (!text.trim()) { new Notice("Clipboard is empty — copy an AI response first."); return; }
+		const folder = saveNoteFolder.trim() || "AI Notes";
+		if (!app.vault.getAbstractFileByPath(folder)) {
+			await app.vault.createFolder(folder);
+		}
+		const now = new Date();
+		const pad = (n: number): string => String(n).padStart(2, "0");
+		const name = `AI Response ${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+		const path = `${folder}/${name}.md`;
+		const file = await app.vault.create(path, text);
+		new Notice(`Saved to ${file.path}`);
+		const leaf = app.workspace.getLeaf(false);
+		if (leaf) await leaf.openFile(file);
+	}
+
 	async function handleAddContext(): Promise<void> {
 		if (items.length === 0) { new Notice("Add some notes to context first."); return; }
 
@@ -354,7 +421,8 @@ export function AIChatPanel({
 			for (const item of items) {
 				const node = app.vault.getAbstractFileByPath(item.path);
 				if (item.type === "file" && node instanceof TFile) {
-					const content = await app.vault.read(node);
+					const raw = await app.vault.read(node);
+					const content = stripFrontmatter ? stripFrontmatterContent(raw) : raw;
 					parts.push(`## Note: ${node.basename}\n\n${content}`);
 				} else if (item.type === "folder" && node instanceof TFolder) {
 					const files: TFile[] = [];
@@ -366,7 +434,8 @@ export function AIChatPanel({
 					};
 					traverse(node);
 					for (const file of files) {
-						const content = await app.vault.read(file);
+						const raw = await app.vault.read(file);
+						const content = stripFrontmatter ? stripFrontmatterContent(raw) : raw;
 						parts.push(`## Note: ${file.basename}\n\n${content}`);
 					}
 				}
@@ -397,12 +466,30 @@ export function AIChatPanel({
 	const hasItems    = items.length > 0;
 
 	return (
-		<div className="ai-chat-app" {...(theme !== "auto" ? { "data-cp-theme": theme } : {})}>
+		<div
+			className={`ai-chat-app${isExpanded ? " is-expanded" : ""}`}
+			{...(theme !== "auto" ? { "data-cp-theme": theme } : {})}
+		>
 			<header className="vc-header">
 
-				{/* Row 1 — Service selector */}
+				{/* Row 1 — Navigation + Service selector + Expand */}
 				{hasServices && (
 					<div className="vc-service-row">
+						<button
+							className="vc-nav-btn"
+							onClick={goBack}
+							disabled={!canGoBack}
+							title="Go back"
+							aria-label="Back"
+						>‹</button>
+						<button
+							className="vc-nav-btn"
+							onClick={goForward}
+							disabled={!canGoForward}
+							title="Go forward"
+							aria-label="Forward"
+						>›</button>
+
 						<span
 							className={`vc-svc-dot vc-svc-dot--${activeService ?? "none"}`}
 							aria-hidden="true"
@@ -434,26 +521,39 @@ export function AIChatPanel({
 								onClick={reloadWebview}
 								title="Reload the AI page"
 								aria-label="Reload"
-							>
-								↺
-							</button>
+							>↺</button>
 						)}
+						<button
+							className="vc-expand-btn"
+							onClick={() => setIsExpanded((v) => !v)}
+							title={isExpanded ? "Collapse panel" : "Expand panel"}
+							aria-label={isExpanded ? "Collapse" : "Expand"}
+						>
+							{isExpanded ? "⊡" : "⊞"}
+						</button>
 					</div>
 				)}
 
-				{/* Row 2 — Context bar: sources (left) + count + send (right) */}
+				{/* Row 2 — Context bar */}
 				<div className="vc-context-bar">
 					<div className="vc-ctx-actions">
 						<button className="vc-ctx-btn" onClick={addActiveFile}   title="Add the currently focused note">Active</button>
 						<button className="vc-ctx-btn" onClick={addAllOpenFiles} title="Add all open markdown tabs">Open</button>
 						<button className="vc-ctx-btn" onClick={addFile}         title="Search and pick any vault note">+ Note</button>
 						<button className="vc-ctx-btn" onClick={addFolder}       title="Add all .md files inside a folder">+ Folder</button>
+						{promptTemplates.length > 0 && (
+							<button
+								className={`vc-ctx-btn vc-templates-btn${showTemplates ? " is-active" : ""}`}
+								onClick={() => { setShowTemplates((v) => !v); setShowContextList(false); }}
+								title="Insert a prompt template"
+							>Templates ▾</button>
+						)}
 					</div>
 
 					<div className="vc-ctx-right">
 						<button
 							className={`vc-ctx-count${hasItems ? " has-items" : ""}${showContextList ? " is-open" : ""}`}
-							onClick={() => setShowContextList((v) => !v)}
+							onClick={() => { setShowContextList((v) => !v); setShowTemplates(false); }}
 							title={hasItems ? `${items.length} item${items.length !== 1 ? "s" : ""} — click to view` : "No items in context"}
 							disabled={!hasItems}
 							aria-expanded={showContextList}
@@ -469,8 +569,32 @@ export function AIChatPanel({
 						>
 							{isAdding ? "…" : "Add"}
 						</button>
+
+						<button
+							className="vc-save-btn"
+							onClick={() => void saveClipboardAsNote()}
+							title="Save clipboard content as a new vault note"
+							aria-label="Save AI response as note"
+						>Save</button>
 					</div>
 				</div>
+
+				{/* Prompt templates dropdown */}
+				{showTemplates && promptTemplates.length > 0 && (
+					<div className="vc-templates-list" role="list" aria-label="Prompt templates">
+						{promptTemplates.map((t) => (
+							<button
+								key={t.id}
+								className="vc-template-item"
+								role="listitem"
+								onClick={() => void applyTemplate(t.text)}
+								title={t.text || "No text set"}
+							>
+								{t.label}
+							</button>
+						))}
+					</div>
+				)}
 
 				{/* Context item list — animated dropdown overlay */}
 				{showContextList && hasItems && (
