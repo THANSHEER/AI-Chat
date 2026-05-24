@@ -1,5 +1,9 @@
 import { SERVICE_URLS, ServiceKey } from "./constants";
 
+export function stripFrontmatterContent(content: string): string {
+	return content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "").trimStart();
+}
+
 export function normalizeUrl(value: string): string {
 	const trimmed = value.trim();
 	if (!trimmed) return SERVICE_URLS.chatgpt;
@@ -8,13 +12,21 @@ export function normalizeUrl(value: string): string {
 }
 
 export function getServiceKey(url: string): ServiceKey | null {
-	const lower = url.toLowerCase();
-	if (lower.includes("claude.ai"))                                         return "claude";
-	if (lower.includes("chatgpt.com") || lower.includes("chat.openai.com")) return "chatgpt";
-	if (lower.includes("chat.deepseek.com"))                                 return "deepseek";
-	if (lower.includes("perplexity.ai"))                                     return "perplexity";
-	if (lower.includes("gemini.google.com"))                                 return "gemini";
-	if (lower.includes("grok.com"))                                          return "grok";
+	let hostname: string;
+	try {
+		hostname = new URL(url).hostname.toLowerCase();
+	} catch {
+		return null;
+	}
+	if (hostname === "claude.ai")                                                    return "claude";
+	if (hostname === "chatgpt.com"       || hostname === "chat.openai.com")         return "chatgpt";
+	if (hostname === "chat.deepseek.com")                                            return "deepseek";
+	if (hostname === "www.perplexity.ai" || hostname === "perplexity.ai")           return "perplexity";
+	if (hostname === "gemini.google.com")                                            return "gemini";
+	if (hostname === "grok.com")                                                     return "grok";
+	if (hostname === "copilot.microsoft.com")                                        return "copilot";
+	if (hostname === "manus.im")                                                     return "manus";
+	if (hostname === "kimi.ai")                                                      return "kimi";
 	return null;
 }
 

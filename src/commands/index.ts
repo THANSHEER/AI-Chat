@@ -45,6 +45,24 @@ export function registerCommands(plugin: AIChatPlugin): void {
 	});
 
 	plugin.addCommand({
+		id: "open-copilot",
+		name: "Open copilot",
+		callback: () => void plugin.openCopilot(),
+	});
+
+	plugin.addCommand({
+		id: "open-manus",
+		name: "Open manus AI",
+		callback: () => void plugin.openManus(),
+	});
+
+	plugin.addCommand({
+		id: "open-kimi",
+		name: "Open kimi",
+		callback: () => void plugin.openKimi(),
+	});
+
+	plugin.addCommand({
 		id: "send-selection",
 		name: "Send selected text to AI",
 		editorCallback: (editor: Editor) => void plugin.sendSelectionToAI(editor.getSelection()),
@@ -54,5 +72,11 @@ export function registerCommands(plugin: AIChatPlugin): void {
 		id: "toggle",
 		name: "Toggle sidebar",
 		callback: () => void plugin.toggleView(),
+	});
+
+	plugin.addCommand({
+		id: "cycle-service",
+		name: "Cycle to next AI service",
+		callback: () => void plugin.cycleService(),
 	});
 }

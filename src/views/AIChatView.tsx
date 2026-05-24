@@ -62,6 +62,9 @@ export class AIChatView extends ItemView {
 				enablePerplexity={this.plugin.settings.enablePerplexity}
 				enableGemini={this.plugin.settings.enableGemini}
 				enableGrok={this.plugin.settings.enableGrok}
+				enableCopilot={this.plugin.settings.enableCopilot}
+				enableManus={this.plugin.settings.enableManus}
+				enableKimi={this.plugin.settings.enableKimi}
 				autoRefreshMinutes={this.plugin.settings.autoRefreshMinutes}
 				autoClearContext={this.plugin.settings.autoClearContext}
 				contextPrefix={this.plugin.settings.contextPrefix}
@@ -71,6 +74,10 @@ export class AIChatView extends ItemView {
 				pendingText={this.pendingText}
 				onPendingTextHandled={() => { this.pendingText = null; this.renderView(); }}
 				theme={this.plugin.settings.theme}
+				promptTemplates={this.plugin.settings.promptTemplates}
+				autoContextOnOpen={this.plugin.settings.autoContextOnOpen}
+				stripFrontmatter={this.plugin.settings.stripFrontmatter}
+				saveNoteFolder={this.plugin.settings.saveNoteFolder}
 			/>,
 		);
 	}

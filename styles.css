@@ -100,8 +100,8 @@
 	display: flex;
 	align-items: center;
 	flex-wrap: nowrap;
-	gap: 6px;
-	padding: 2px 8px 4px;
+	gap: 4px;
+	padding: 3px 6px;
 	border-bottom: 1px solid var(--background-modifier-border);
 	min-height: 0;
 }
@@ -214,6 +214,80 @@
 	50%       { opacity: 1;   transform: scale(1);   }
 }
 
+/* ── Expanded panel (full-window overlay) ────────────────── */
+
+.ai-chat-app.is-expanded {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 9998;
+	border-radius: 0;
+	box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.35);
+}
+
+/* ── Row 1 extras: nav buttons + expand button ───────────── */
+
+.ai-chat-view .vc-nav-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	min-width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+	border: none;
+	border-radius: 4px;
+	background: transparent;
+	color: var(--text-faint);
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
+	padding: 0;
+	box-sizing: border-box;
+	transition: color 90ms, background 90ms;
+}
+
+.ai-chat-view .vc-nav-btn:hover:not(:disabled) {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.ai-chat-view .vc-nav-btn:disabled {
+	opacity: 0.28;
+	cursor: not-allowed;
+}
+
+.ai-chat-view .vc-expand-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	min-width: 22px;
+	height: 22px;
+	flex-shrink: 0;
+	border: none;
+	border-radius: 4px;
+	background: transparent;
+	color: var(--text-faint);
+	font-size: 13px;
+	line-height: 1;
+	cursor: pointer;
+	padding: 0;
+	box-sizing: border-box;
+	transition: color 90ms, background 90ms;
+}
+
+.ai-chat-view .vc-expand-btn:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.ai-chat-app.is-expanded .vc-expand-btn {
+	color: var(--interactive-accent);
+}
+
 /* ── Row 2: Context bar ──────────────────────────────────── */
 
 .ai-chat-view .vc-context-bar {
@@ -262,6 +336,11 @@
 .ai-chat-view .vc-ctx-btn:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
+}
+
+.ai-chat-view .vc-templates-btn.is-active {
+	background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+	color: var(--interactive-accent);
 }
 
 .ai-chat-view .vc-ctx-right {
@@ -340,6 +419,30 @@
 .ai-chat-view .vc-add-btn:disabled {
 	opacity: 0.4;
 	cursor: not-allowed;
+}
+
+.ai-chat-view .vc-save-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 2px 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background: transparent;
+	color: var(--text-faint);
+	font-size: 11px;
+	font-weight: 500;
+	cursor: pointer;
+	white-space: nowrap;
+	line-height: 1.5;
+	box-sizing: border-box;
+	transition: background 90ms, border-color 90ms, color 90ms;
+}
+
+.ai-chat-view .vc-save-btn:hover {
+	border-color: var(--interactive-accent);
+	color: var(--interactive-accent);
+	background: color-mix(in srgb, var(--interactive-accent) 8%, transparent);
 }
 
 /* ── Context item list (dropdown overlay) ────────────────── */
@@ -459,6 +562,60 @@
 .vc-ctx-clear-btn:hover {
 	color: var(--text-error);
 	background: color-mix(in srgb, var(--text-error) 10%, transparent);
+}
+
+/* ── Prompt templates dropdown ───────────────────────────── */
+
+.vc-templates-list {
+	position: absolute;
+	top: calc(50% + 50%);
+	left: 0;
+	right: 0;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-top: none;
+	border-radius: 0 0 6px 6px;
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.13);
+	max-height: 200px;
+	overflow-y: auto;
+	z-index: 20;
+	animation: vc-list-enter 140ms ease-out;
+}
+
+.vc-template-item {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	padding: 7px 12px;
+	border: none;
+	border-bottom: 1px solid var(--background-modifier-border);
+	background: transparent;
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	text-align: left;
+	cursor: pointer;
+	transition: background 70ms;
+	box-sizing: border-box;
+}
+
+.vc-template-item:last-child {
+	border-bottom: none;
+}
+
+.vc-template-item:hover {
+	background: var(--background-modifier-hover);
+	color: var(--interactive-accent);
+}
+
+/* ── Settings template row ───────────────────────────────── */
+
+.vc-template-row .setting-item-control {
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.vc-template-textarea {
+	width: 100%;
 }
 
 /* ── Webview ─────────────────────────────────────────────── */
