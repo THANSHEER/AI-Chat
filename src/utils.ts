@@ -12,16 +12,21 @@ export function normalizeUrl(value: string): string {
 }
 
 export function getServiceKey(url: string): ServiceKey | null {
-	const lower = url.toLowerCase();
-	if (lower.includes("claude.ai"))                                         return "claude";
-	if (lower.includes("chatgpt.com") || lower.includes("chat.openai.com")) return "chatgpt";
-	if (lower.includes("chat.deepseek.com"))                                 return "deepseek";
-	if (lower.includes("perplexity.ai"))                                     return "perplexity";
-	if (lower.includes("gemini.google.com"))                                 return "gemini";
-	if (lower.includes("grok.com"))                                          return "grok";
-	if (lower.includes("copilot.microsoft.com"))                             return "copilot";
-	if (lower.includes("manus.im"))                                          return "manus";
-	if (lower.includes("kimi.ai"))                                           return "kimi";
+	let hostname: string;
+	try {
+		hostname = new URL(url).hostname.toLowerCase();
+	} catch {
+		return null;
+	}
+	if (hostname === "claude.ai")                                                    return "claude";
+	if (hostname === "chatgpt.com"       || hostname === "chat.openai.com")         return "chatgpt";
+	if (hostname === "chat.deepseek.com")                                            return "deepseek";
+	if (hostname === "www.perplexity.ai" || hostname === "perplexity.ai")           return "perplexity";
+	if (hostname === "gemini.google.com")                                            return "gemini";
+	if (hostname === "grok.com")                                                     return "grok";
+	if (hostname === "copilot.microsoft.com")                                        return "copilot";
+	if (hostname === "manus.im")                                                     return "manus";
+	if (hostname === "kimi.ai")                                                      return "kimi";
 	return null;
 }
 
