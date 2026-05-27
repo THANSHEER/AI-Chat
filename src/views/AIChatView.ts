@@ -575,7 +575,20 @@ export class AIChatView extends ItemView {
 
 	// ── Navigation ────────────────────────────────────────────
 
+	private isValidWebviewUrl(url: string): boolean {
+		try {
+			const parsed = new URL(url);
+			return parsed.protocol === "http:" || parsed.protocol === "https:";
+		} catch {
+			return false;
+		}
+	}
+
 	private switchToUrl(url: string): void {
+		if (!this.isValidWebviewUrl(url)) {
+			console.warn("Invalid URL attempted:", url);
+			return;
+		}
 		this.activeUrl = url;
 		if (this.isPrimary) void this.plugin.setWebAppUrl(url);
 		else                void this.plugin.setSplitPanelUrl(url);
