@@ -21,7 +21,7 @@ export default class AIChatPlugin extends Plugin {
 			(leaf: WorkspaceLeaf) => new AIChatView(leaf, this, false),
 		);
 
-		this.addRibbonIcon("messages-square", "Open AI Hub", () => {
+		this.addRibbonIcon("messages-square", "Open AI portal", () => {
 			void this.toggleView();
 		});
 
@@ -134,7 +134,7 @@ export default class AIChatPlugin extends Plugin {
 	}
 
 	async sendSelectionToAI(text: string): Promise<void> {
-		if (!this.settings.sendSelectionEnabled) { new Notice("Send selected text is disabled — enable it in AI Hub settings."); return; }
+		if (!this.settings.sendSelectionEnabled) { new Notice("Send selected text is disabled — enable it in AI portal settings."); return; }
 		if (!text.trim()) { new Notice("Select some text first."); return; }
 		await this.activateView();
 		const leaf = this.app.workspace.getLeavesOfType(AI_CHAT_VIEW_TYPE)[0];

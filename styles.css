@@ -67,6 +67,7 @@
 
 .ai-chat-app {
 	flex-direction: column;
+	overflow-x: hidden;
 	background: var(--background-primary);
 }
 
@@ -245,7 +246,7 @@
 .ai-chat-view .vc-context-bar {
 	display: flex;
 	align-items: center;
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
 	gap: 4px;
 	padding: 3px 6px 3px 4px;
 	min-height: 0;
@@ -295,6 +296,7 @@
 	align-items: center;
 	gap: 4px;
 	flex-shrink: 0;
+	margin-left: auto;
 }
 
 .ai-chat-view .vc-ctx-count {
@@ -396,7 +398,7 @@
 
 .vc-context-list {
 	position: absolute;
-	top: calc(50% + 50%);
+	top: 100%;
 	left: 0;
 	right: 0;
 	background: var(--background-primary);
@@ -405,6 +407,7 @@
 	border-radius: 0 0 6px 6px;
 	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.13);
 	max-height: 220px;
+	overflow-x: hidden;
 	overflow-y: auto;
 	z-index: 20;
 	animation: vc-list-enter 140ms ease-out;
@@ -420,6 +423,7 @@
 	align-items: center;
 	gap: 8px;
 	padding: 6px 10px;
+	min-width: 0;
 	border-bottom: 1px solid var(--background-modifier-border);
 	transition: background 70ms;
 }

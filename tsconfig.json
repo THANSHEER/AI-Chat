@@ -2,7 +2,6 @@
 	"compilerOptions": {
 		"inlineSourceMap": true,
 		"inlineSources": true,
-		"jsx": "react-jsx",
 		"module": "ESNext",
 		"target": "ES6",
 		"allowJs": true,
@@ -29,12 +28,10 @@
 		]
 	},
 	"include": [
-		"src/**/*.ts",
-		"src/**/*.tsx"
+		"src/**/*.ts"
 	],
 	"exclude": [
 		"src/**/*.test.ts",
-		"src/**/*.test.tsx",
 		"node_modules"
 	]
 }

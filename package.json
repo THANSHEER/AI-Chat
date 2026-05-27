@@ -20,8 +20,6 @@
 	"devDependencies": {
 		"@eslint/js": "9.30.1",
 		"@types/node": "^22.19.19",
-		"@types/react": "^18.3.18",
-		"@types/react-dom": "^18.3.5",
 		"esbuild": "^0.28.0",
 		"eslint-plugin-obsidianmd": "^0.3.0",
 		"globals": "14.0.0",
@@ -32,8 +30,6 @@
 		"vitest": "^2.1.9"
 	},
 	"dependencies": {
-		"obsidian": "^1.12.3",
-		"react": "^18.3.1",
-		"react-dom": "^18.3.1"
+		"obsidian": "^1.12.3"
 	}
 }

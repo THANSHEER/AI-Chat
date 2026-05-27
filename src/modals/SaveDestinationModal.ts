@@ -48,13 +48,15 @@ export class SaveDestinationModal extends Modal {
 
 	private appendToExisting(): void {
 		this.close();
-		new FilePickerModal(this.app, async (file: TFile) => {
-			const existing = await this.app.vault.read(file);
-			const separator = existing.trim() ? "\n\n---\n\n" : "";
-			await this.app.vault.modify(file, existing + separator + this.text);
-			new Notice(`Appended to ${file.path}`);
-			const leaf = this.app.workspace.getLeaf(false);
-			if (leaf) await leaf.openFile(file);
+		new FilePickerModal(this.app, (file: TFile) => {
+			void (async () => {
+				const existing = await this.app.vault.read(file);
+				const separator = existing.trim() ? "\n\n---\n\n" : "";
+				await this.app.vault.modify(file, existing + separator + this.text);
+				new Notice(`Appended to ${file.path}`);
+				const leaf = this.app.workspace.getLeaf(false);
+				if (leaf) await leaf.openFile(file);
+			})();
 		}).open();
 	}
 
